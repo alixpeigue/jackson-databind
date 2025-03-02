@@ -405,6 +405,9 @@ public class BeanDeserializer
                 }
                 handleUnknownVanilla(p, ctxt, bean, propName);
             } while ((propName = p.nextFieldName()) != null);
+            if(_anySetter != null) {
+                _anySetter.parsingDone(bean);
+            }
         }
         return bean;
     }

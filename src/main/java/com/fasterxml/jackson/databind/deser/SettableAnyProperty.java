@@ -87,6 +87,18 @@ public abstract class SettableAnyProperty
     }
 
     /**
+     * @since 2.19
+     */
+    public static SettableAnyProperty constructForMapMethod(DeserializationContext ctxt,
+            BeanProperty property,
+            AnnotatedMember field, JavaType valueType,
+            KeyDeserializer keyDeser,
+            JsonDeserializer<Object> valueDeser, TypeDeserializer typeDeser) {
+        return new MapMethodAnyProperty(property, field, valueType,
+                keyDeser, valueDeser, typeDeser);
+    }
+
+    /**
      * @since 2.14
      */
     public static SettableAnyProperty constructForMapField(DeserializationContext ctxt,
@@ -270,6 +282,9 @@ public abstract class SettableAnyProperty
 
     protected abstract void _set(Object instance, Object propName, Object value) throws Exception;
 
+    public void parsingDone(Object instance) throws Exception {}
+
+
     /*
     /**********************************************************
     /* Helper methods
@@ -339,6 +354,32 @@ public abstract class SettableAnyProperty
     /* Concrete implementations
     /**********************************************************************
      */
+
+    /**
+     * @since 2.19
+     */
+    protected static class MapMethodAnyProperty extends SettableAnyProperty implements java.io.Serializable {
+        Map<Object, Object> map;
+
+        public MapMethodAnyProperty(BeanProperty property, AnnotatedMember setter, JavaType type, KeyDeserializer keyDeser, JsonDeserializer<Object> valueDeser, TypeDeserializer typeDeser) {
+            super(property, setter, type, keyDeser, valueDeser, typeDeser);
+        }
+
+        @Override
+        public SettableAnyProperty withValueDeserializer(JsonDeserializer<Object> deser) {
+            return new MapMethodAnyProperty(_property, _setter, _type, _keyDeserializer, deser, _valueTypeDeserializer);
+        }
+
+        @Override
+        protected void _set(Object instance, Object propName, Object value)  {
+            map.put(propName, value);
+        }
+
+        @Override
+        public void parsingDone(Object instance) throws Exception {
+            ((AnnotatedMethod) _setter).callOnWith(instance, map);
+        }
+    }
 
     /**
      * @since 2.14
