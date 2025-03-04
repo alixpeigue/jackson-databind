@@ -842,18 +842,31 @@ ClassUtil.name(name), ((AnnotatedParameter) m).getIndex());
         final boolean isField = mutator instanceof AnnotatedField;
         // [databind#562] Allow @JsonAnySetter on Creator constructor
         final boolean isParameter = mutator instanceof AnnotatedParameter;
+        boolean isMapMethod = false; 
         int parameterIndex = -1;
 
         if (mutator instanceof AnnotatedMethod) {
-            // we know it's a 2-arg method, second arg is the value
             AnnotatedMethod am = (AnnotatedMethod) mutator;
-            keyType = am.getParameterType(0);
-            valueType = am.getParameterType(1);
-            // Need to resolve for possible generic types (like Maps, Collections)
-            valueType = resolveMemberAndTypeAnnotations(ctxt, mutator, valueType);
-            prop = new BeanProperty.Std(PropertyName.construct(mutator.getName()),
-                    valueType, null, mutator,
-                    PropertyMetadata.STD_OPTIONAL);
+            // It can either be a 2-arg method or 1-arg of type Map. 
+            if(am.getParameterCount() == 1){
+                JavaType paramType = am.getParameterType(0);
+                paramType = resolveMemberAndTypeAnnotations(ctxt, am, paramType);
+                keyType = paramType.getKeyType();
+                valueType = paramType.getContentType();
+                prop =  new BeanProperty.Std(PropertyName.construct(mutator.getName()),
+                paramType, null, mutator, PropertyMetadata.STD_OPTIONAL);
+                isMapMethod = true; 
+            }
+            // we know it's a 2-arg method, second arg is the value
+            else{
+                keyType = am.getParameterType(0);
+                valueType = am.getParameterType(1);
+                // Need to resolve for possible generic types (like Maps, Collections)
+                valueType = resolveMemberAndTypeAnnotations(ctxt, mutator, valueType);
+                prop = new BeanProperty.Std(PropertyName.construct(mutator.getName()),
+                        valueType, null, mutator,
+                        PropertyMetadata.STD_OPTIONAL);
+            }
 
         } else if (isField) {
             AnnotatedField af = (AnnotatedField) mutator;
@@ -951,6 +964,9 @@ ClassUtil.name(name), ((AnnotatedParameter) m).getIndex());
         if (isParameter) {
             return SettableAnyProperty.constructForMapParameter(ctxt,
                     prop, mutator, valueType, keyDeser, deser, typeDeser, parameterIndex);
+        }
+        if(isMapMethod){
+            return SettableAnyProperty.constructForMapMethod(ctxt, prop, mutator, valueType, keyDeser, deser, typeDeser);
         }
         return SettableAnyProperty.constructForMethod(ctxt,
                 prop, mutator, valueType, keyDeser, deser, typeDeser);
