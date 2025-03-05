@@ -1096,6 +1096,15 @@ ctor.creator()));
                 _addGetterMethod(props, m, _annotationIntrospector);
             } else if (argCount == 1) { // setters
                 _addSetterMethod(props, m, _annotationIntrospector);
+
+                // Allow single-argument @JsonAnySetter methods
+                if (Boolean.TRUE.equals(_annotationIntrospector.hasAnySetter(m))) {
+                    if (_anySetters == null) {
+                        _anySetters = new LinkedList<>();
+                    }
+                    _anySetters.add(m);
+                }
+
             } else if (argCount == 2) { // any setter?
                 if (Boolean.TRUE.equals(_annotationIntrospector.hasAnySetter(m))) {
                     if (_anySetters == null) {
