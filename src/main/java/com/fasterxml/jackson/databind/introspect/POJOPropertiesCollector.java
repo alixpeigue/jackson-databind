@@ -1095,7 +1095,16 @@ ctor.creator()));
             if (argCount == 0) { // getters (including 'any getter')
                 _addGetterMethod(props, m, _annotationIntrospector);
             } else if (argCount == 1) { // setters
-                _addSetterMethod(props, m, _annotationIntrospector);
+                if (Boolean.TRUE.equals(_annotationIntrospector.hasAnySetter(m))) { 
+                    // If it's an @JsonAnySetter, add it to _anySetters and DO NOT process as a normal setter
+                    if (_anySetters == null) {
+                        _anySetters = new LinkedList<>();
+                    }
+                    _anySetters.add(m);
+                } else {
+                    // Regular setter (only if NOT annotated with @JsonAnySetter)
+                    _addSetterMethod(props, m, _annotationIntrospector);
+                }          
             } else if (argCount == 2) { // any setter?
                 if (Boolean.TRUE.equals(_annotationIntrospector.hasAnySetter(m))) {
                     if (_anySetters == null) {
