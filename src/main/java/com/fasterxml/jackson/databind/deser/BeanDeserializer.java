@@ -278,6 +278,18 @@ public class BeanDeserializer
             }
             handleUnknownVanilla(p, ctxt, bean, propName);
         } while ((propName = p.nextFieldName()) != null);
+
+        // [databind#4889] This code is for 1-arg of type map anysetter methods
+        // Indicates that the parsing is done and that the 1-arg method can be called
+        // with the map of unmapped properties.
+        if(_anySetter != null) {
+            try{
+                _anySetter.parsingDone(bean);
+            }catch(Exception e){
+                wrapInstantiationProblem(e, ctxt);
+            }
+        }
+
         return bean;
     }
 
@@ -315,6 +327,17 @@ public class BeanDeserializer
                 }
                 handleUnknownVanilla(p, ctxt, bean, propName);
             } while ((propName = p.nextFieldName()) != null);
+
+            // [databind#4889] This code is for 1-arg of type map anysetter methods
+            // Indicates that the parsing is done and that the 1-arg method can be called
+            // with the map of unmapped properties.
+            if(_anySetter != null) {
+                try{
+                    _anySetter.parsingDone(bean);
+                }catch(Exception e){
+                    wrapInstantiationProblem(e, ctxt);
+                }
+            }
         }
         return bean;
     }
@@ -405,16 +428,16 @@ public class BeanDeserializer
                 }
                 handleUnknownVanilla(p, ctxt, bean, propName);
             } while ((propName = p.nextFieldName()) != null);
-            // This code is for 1-arg of type map anysetter methods
+
+            // [databind#4889] This code is for 1-arg of type map anysetter methods
             // Indicates that the parsing is done and that the 1-arg method can be called 
             // with the map of unmapped properties. 
             if(_anySetter != null) {
                 try{
                     _anySetter.parsingDone(bean);
                 }catch(Exception e){
-                    wrapAndThrow(e, bean, propName, ctxt);
-                }                
-
+                    wrapInstantiationProblem(e, ctxt);
+                }
             }
         }
         return bean;
@@ -721,6 +744,17 @@ public class BeanDeserializer
                 }
                 handleUnknownVanilla(p, ctxt, bean, propName);
             } while ((propName = p.nextFieldName()) != null);
+
+            // [databind#4889] This code is for 1-arg of type map anysetter methods
+            // Indicates that the parsing is done and that the 1-arg method can be called
+            // with the map of unmapped properties.
+            if(_anySetter != null) {
+                try {
+                    _anySetter.parsingDone(bean);
+                } catch (Exception e) {
+                    wrapInstantiationProblem(e, ctxt);
+                }
+            }
         }
         return bean;
     }
