@@ -359,7 +359,7 @@ public abstract class SettableAnyProperty
      * @since 2.19
      */
     protected static class MapMethodAnyProperty extends SettableAnyProperty implements java.io.Serializable {
-        Map<Object, Object> map;
+        Map<Object, Object> map = new HashMap<>();
 
         public MapMethodAnyProperty(BeanProperty property, AnnotatedMember setter, JavaType type, KeyDeserializer keyDeser, JsonDeserializer<Object> valueDeser, TypeDeserializer typeDeser) {
             super(property, setter, type, keyDeser, valueDeser, typeDeser);
