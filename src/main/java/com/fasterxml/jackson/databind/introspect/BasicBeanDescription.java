@@ -286,9 +286,14 @@ public class BasicBeanDescription extends BeanDescription
                  *  requested; easy enough for devs to add support within method.
                  */
                 Class<?> type = anyMethod.getRawParameterType(0);
-                if ((type != String.class) && (type != Object.class)) {
+                if ((type != String.class) && (type != Object.class) && (type != Map.class)) {
                     throw new IllegalArgumentException(String.format(
-"Invalid 'any-setter' annotation on method '%s()': first argument not of type String or Object, but %s",
+"Invalid 'any-setter' annotation on method '%s()': first argument not of type String or Object or Map, but %s",
+anyMethod.getName(), type.getName()));
+                }
+                if ((type == Map.class) && (anyMethod.getParameterCount() != 1)) {
+                    throw new IllegalArgumentException(String.format(
+"Invalid 'any-setter' annotation on method '%s()': If method takes only one argument then it must be of type Map, but found %s", 
 anyMethod.getName(), type.getName()));
                 }
                 return anyMethod;
