@@ -281,6 +281,9 @@ public class AnySetterTest extends DatabindTestUtil
 
         @JsonAnySetter
         public void putAll(Map<String, Object> props) {
+            if(_map != null) {
+                throw new RuntimeException("Method called multiple times during deserialization");
+            }
             _map = props;
         }
     }
@@ -303,7 +306,7 @@ public class AnySetterTest extends DatabindTestUtil
     static class AnySetterPriorityBean {
 
         @JsonAnySetter
-        public Map<String, Object> map = new HashMap<>();
+        public Map<String, Object> map;
 
         public Map<String, Object> _map;
 
@@ -610,10 +613,10 @@ public class AnySetterTest extends DatabindTestUtil
     @Test
     public void testAnySetterPriority() throws Exception {
         AnySetterPriorityBean bean = MAPPER.readValue(a2q("{'a':1}"), AnySetterPriorityBean.class);
-        assertEquals(0, bean.map.size());
+        assertNull(bean.map);
         Map<String, Object> map = bean._map;
         assertNotNull(map);
-        assertEquals(1, bean._map.size());
+        assertEquals(1, map.size());
         assertEquals(1, map.get("a"));
     }
 
@@ -629,7 +632,8 @@ public class AnySetterTest extends DatabindTestUtil
     public void testAnySetterInvalidSignature() throws Exception {
         try {
             MAPPER.readValue(a2q("{'a':1}"), AnySetterInvalidSignature.class);
-        } catch (InvalidDefinitionException e) { // Changed from IllegalArgumentException to InvalidDefinitionException
+            fail("Should have gotten an exception");
+        } catch (InvalidDefinitionException e) {
             verifyException(e, "Invalid 'any-setter' annotation on method");
             verifyException(e, "first argument not of type");
         }
