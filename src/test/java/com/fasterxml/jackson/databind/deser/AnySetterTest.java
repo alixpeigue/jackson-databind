@@ -638,8 +638,6 @@ public class AnySetterTest extends DatabindTestUtil
             verifyException(e, "first argument not of type");
         }
     }
-    
-    
 
     /*
     /**********************************************************
