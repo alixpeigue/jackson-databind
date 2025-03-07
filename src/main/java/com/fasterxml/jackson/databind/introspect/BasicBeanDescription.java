@@ -293,9 +293,9 @@ anyMethod.getName(), type.getName()));
                 }
 		if (type == Map.class) {
 			Class<?> keyType = anyMethod.getParameterType(0).getKeyType().getRawClass();
-	                if ((keyType != Object.class) && (anyMethod.getParameterCount() != 1)) {
+	                if ((keyType != Object.class && keyType != String.class) && (anyMethod.getParameterCount() != 1)) {
 	                    throw new IllegalArgumentException(String.format(
-	"Invalid 'any-setter' annotation on method '%s()': If method takes only one argument then it must be of type Map with key of type that inherits Object, but found %s", anyMethod.getName(), type.getName()));
+	"Invalid 'any-setter' annotation on method '%s()': If method takes only one argument of type Map then the key must be of type Object or String, but found %s", anyMethod.getName(), keyType.getName()));
 			}
 		}
                 return anyMethod;
