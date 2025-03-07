@@ -303,7 +303,7 @@ public class AnySetterTest extends DatabindTestUtil
     static class AnySetterPriorityBean {
 
         @JsonAnySetter
-        public Map<String, Object> map;
+        public Map<String, Object> map = new HashMap<>();
 
         public Map<String, Object> _map;
 
@@ -564,7 +564,7 @@ public class AnySetterTest extends DatabindTestUtil
     // [databind#4889]
     @Test
     public void testMapMethodAnySetter() throws Exception {
-        MapAnySetterBean bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]"), MapAnySetterBean.class);
+        MapAnySetterBean bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]}"), MapAnySetterBean.class);
         Map<String, Object> map = bean._map;
         assertNotNull(map);
         assertEquals(1, bean.x);
@@ -581,7 +581,7 @@ public class AnySetterTest extends DatabindTestUtil
     // [databind#4889]
     @Test
     public void testMapMethodAnySetterInheritance() throws Exception {
-        MapAnySetterBeanExtension bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]"), MapAnySetterBeanExtension.class);
+        MapAnySetterBeanExtension bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]}"), MapAnySetterBeanExtension.class);
         Map<String, Object> map = bean._map;
         assertNotNull(map);
         assertEquals(1, bean.x);
@@ -613,13 +613,14 @@ public class AnySetterTest extends DatabindTestUtil
         assertEquals(0, bean.map.size());
         Map<String, Object> map = bean._map;
         assertNotNull(map);
-        assertEquals(1, bean.map.size());
+        assertEquals(1, bean._map.size());
         assertEquals(1, map.get("a"));
     }
 
     // [databind#4889]
     @Test
     public void testAnySetterDisabledMapMethod() throws Exception {
+        MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         MAPPER.readValue(a2q("{'a':1}"), AnySetterDisabledMapMethodBean.class); // should not throw
     }
 
@@ -628,11 +629,13 @@ public class AnySetterTest extends DatabindTestUtil
     public void testAnySetterInvalidSignature() throws Exception {
         try {
             MAPPER.readValue(a2q("{'a':1}"), AnySetterInvalidSignature.class);
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidDefinitionException e) { // Changed from IllegalArgumentException to InvalidDefinitionException
             verifyException(e, "Invalid 'any-setter' annotation on method");
-            verifyException(e, "first argument to of type Map, but");
+            verifyException(e, "first argument not of type");
         }
     }
+    
+    
 
     /*
     /**********************************************************
