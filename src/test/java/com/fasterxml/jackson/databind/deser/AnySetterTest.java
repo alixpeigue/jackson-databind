@@ -2,6 +2,7 @@ package com.fasterxml.jackson.databind.deser;
 
 import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.annotation.*;
@@ -273,6 +274,62 @@ public class AnySetterTest extends DatabindTestUtil
         Map<String, Object> additionalProperties = new HashMap<>();
     }
 
+    // [databind#4889]
+    static class MapAnySetterBean {
+        public int x;
+        public Map<String, Object> _map;
+
+        @JsonAnySetter
+        public void putAll(Map<String, Object> props) {
+            if(_map != null) {
+                throw new RuntimeException("Method called multiple times during deserialization");
+            }
+            _map = props;
+        }
+    }
+
+    // [databind#4889]
+    static class MapAnySetterBeanExtension extends MapAnySetterBean {
+        public String y;
+    }
+
+    // [databind#4889]
+    static class MapAnySetterMultipleAnnotatedMethodsBean {
+        @JsonAnySetter
+        public void put(String key, Object value) {}
+
+        @JsonAnySetter
+        public void putAll(Map<String, Object> props) {}
+    }
+
+    // [databind#4889]
+    static class AnySetterPriorityBean {
+
+        @JsonAnySetter
+        public Map<String, Object> map;
+
+        public Map<String, Object> _map;
+
+        @JsonAnySetter
+        public void putAll(Map<String, Object> props) {
+            _map = props;
+        }
+    }
+
+    // [databind#4889]
+    static class AnySetterDisabledMapMethodBean {
+        @JsonAnySetter(enabled = false)
+        public void putAll(Map<String, Object> props) {
+            throw new RuntimeException("should not be called");
+        }
+    }
+
+    // [databind#4889]
+    static class AnySetterInvalidSignature {
+        @JsonAnySetter
+        public void putAll(int shouldBeMap) {}
+    }
+
     /*
     /**********************************************************
     /* Test methods
@@ -505,6 +562,81 @@ public class AnySetterTest extends DatabindTestUtil
         Problem4316 result = MAPPER.readValue(json, Problem4316.class);
         assertEquals(Collections.singletonMap("key", "value"),
                 result.additionalProperties);
+    }
+
+    // [databind#4889]
+    @Test
+    public void testMapMethodAnySetter() throws Exception {
+        MapAnySetterBean bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]}"), MapAnySetterBean.class);
+        Map<String, Object> map = bean._map;
+        assertNotNull(map);
+        assertEquals(1, bean.x);
+        assertEquals(3, map.size());
+        assertEquals("foo", map.get("y"));
+        assertEquals(3, map.get("z"));
+        Object ob = map.get("t");
+        assertInstanceOf(List.class, ob);
+        List<?> l = (List<?>)ob;
+        assertEquals(3, l.size());
+        assertEquals(3, l.get(2));
+    }
+
+    // [databind#4889]
+    @Test
+    public void testMapMethodAnySetterInheritance() throws Exception {
+        MapAnySetterBeanExtension bean = MAPPER.readValue(a2q("{'x': 1, 'y': 'foo', 'z': 3, 't': [1, 2, 3]}"), MapAnySetterBeanExtension.class);
+        Map<String, Object> map = bean._map;
+        assertNotNull(map);
+        assertEquals(1, bean.x);
+        assertEquals("foo", bean.y);
+        assertEquals(2, map.size());
+        assertEquals(3, map.get("z"));
+        Object ob = map.get("t");
+        assertInstanceOf(List.class, ob);
+        List<?> l = (List<?>)ob;
+        assertEquals(3, l.size());
+        assertEquals(3, l.get(2));
+    }
+
+    // [databind#4889]
+    @Test
+    public void testMapAnySetterMultipleAnnotatedMethods() throws Exception {
+        try {
+            MAPPER.readValue("{ \"a\" : 3 }", MapAnySetterMultipleAnnotatedMethodsBean.class);
+            fail("Should have gotten an exception");
+        } catch (InvalidDefinitionException e) {
+            verifyException(e, "Multiple 'any-setter' methods");
+        }
+    }
+
+    // [databind#4889]
+    @Test
+    public void testAnySetterPriority() throws Exception {
+        AnySetterPriorityBean bean = MAPPER.readValue(a2q("{'a':1}"), AnySetterPriorityBean.class);
+        assertNull(bean.map);
+        Map<String, Object> map = bean._map;
+        assertNotNull(map);
+        assertEquals(1, map.size());
+        assertEquals(1, map.get("a"));
+    }
+
+    // [databind#4889]
+    @Test
+    public void testAnySetterDisabledMapMethod() throws Exception {
+        MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        MAPPER.readValue(a2q("{'a':1}"), AnySetterDisabledMapMethodBean.class); // should not throw
+    }
+
+    // [databind#4889]
+    @Test
+    public void testAnySetterInvalidSignature() throws Exception {
+        try {
+            MAPPER.readValue(a2q("{'a':1}"), AnySetterInvalidSignature.class);
+            fail("Should have gotten an exception");
+        } catch (InvalidDefinitionException e) {
+            verifyException(e, "Invalid 'any-setter' annotation on method");
+            verifyException(e, "first argument not of type");
+        }
     }
 
     /*
