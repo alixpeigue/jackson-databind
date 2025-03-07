@@ -291,11 +291,13 @@ public class BasicBeanDescription extends BeanDescription
 "Invalid 'any-setter' annotation on method '%s()': first argument not of type String or Object or Map, but %s",
 anyMethod.getName(), type.getName()));
                 }
-                if ((type == Map.class) && (anyMethod.getParameterCount() != 1)) {
-                    throw new IllegalArgumentException(String.format(
-"Invalid 'any-setter' annotation on method '%s()': If method takes only one argument then it must be of type Map, but found %s", 
-anyMethod.getName(), type.getName()));
-                }
+		if (type == Map.class) {
+			Class<?> keyType = anyMethod.getParameterType(0).getKeyType().getRawClass();
+	                if ((keyType != Object.class && keyType != String.class) && (anyMethod.getParameterCount() != 1)) {
+	                    throw new IllegalArgumentException(String.format(
+	"Invalid 'any-setter' annotation on method '%s()': If method takes only one argument of type Map then the key must be of type Object or String, but found %s", anyMethod.getName(), keyType.getName()));
+			}
+		}
                 return anyMethod;
             }
             AnnotatedMember anyField = _propCollector.getAnySetterField();
