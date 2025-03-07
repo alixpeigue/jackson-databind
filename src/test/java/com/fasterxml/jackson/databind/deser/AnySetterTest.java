@@ -330,6 +330,12 @@ public class AnySetterTest extends DatabindTestUtil
         public void putAll(int shouldBeMap) {}
     }
 
+    // [databind#4889]
+    static class AnySetterInvalidSignatureInnerType {
+        @JsonAnySetter
+        public void putAll(Map<Integer, Object> map) {}
+    }
+
     /*
     /**********************************************************
     /* Test methods
@@ -636,6 +642,19 @@ public class AnySetterTest extends DatabindTestUtil
         } catch (InvalidDefinitionException e) {
             verifyException(e, "Invalid 'any-setter' annotation on method");
             verifyException(e, "first argument not of type");
+        }
+    }
+
+    // [databind#4889]
+    @Test
+    public void testAnySetterInvalidSignatureInnerType() throws Exception {
+        try {
+            MAPPER.readValue(a2q("{'a':1}"), AnySetterInvalidSignatureInnerType.class);
+            fail("Should have gotten an exception");
+        } catch (InvalidDefinitionException e) {
+            verifyException(e, "Invalid 'any-setter' annotation on method");
+            verifyException(e, "If method takes only one argument of type Map then the key must be of type");
+            verifyException(e, "Object or String, but found");
         }
     }
 
